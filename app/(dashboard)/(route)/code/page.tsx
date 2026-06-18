@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import * as z from "zod";
 import { Heading } from "@/components/heading";
-import { Code, MessageSquare } from "lucide-react";
+import { Code } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { formSchema } from "./constants";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,21 +10,25 @@ import { Form, FormField, FormControl, FormItem } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
-import { ChatCompletionRequestMessage } from "openai";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import {Empty} from "@/components/empty";
+import { Empty } from "@/components/empty";
 import { Loader } from "@/components/loader";
 import { UserAvatar } from "@/components/user-avatar";
 import { BotAvatar } from "@/components/bot-avatar";
 import ReactMarkdown from "react-markdown";
-
 import { toast } from "react-hot-toast";
 import { useProModal } from "@/hooks/use-pro-modal";
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 const Codepage = () => {
   const router = useRouter();
   const proModal = useProModal();
-  const [messages, setMessages] = useState<ChatCompletionRequestMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,7 +39,7 @@ const Codepage = () => {
   const isLoading = form.formState.isSubmitting;
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const userMessage: ChatCompletionRequestMessage = {
+      const userMessage: ChatMessage = {
         role: "user",
         content: values.prompt,
       };
@@ -49,13 +53,11 @@ const Codepage = () => {
 
       form.reset();
     } catch (error: any) {
-      if(error?.response.status === 403){
+      if (error?.response?.status === 403) {
         proModal.onOpen();
+      } else {
+        toast.error("Something went wrong.");
       }
-      else{
-        toast.error("Something Wrong")
-      }
-     
     } finally {
       router.refresh();
     }
@@ -65,10 +67,10 @@ const Codepage = () => {
     <div>
       <Heading
         title="Code Generation"
-        description="Generates Code from text"
+        description="Generate code from text descriptions."
         icon={Code}
         iconColor="text-green-500"
-        bgColor="bg-violet-500/10"
+        bgColor="bg-green-500/10"
       />
       <div className="px-4 lg:px-8">
         <div>
@@ -115,41 +117,51 @@ const Codepage = () => {
           </Form>
         </div>
         <div className="space-y-4 mt-4">
-        {isLoading && (
+          {isLoading && (
             <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
               <Loader />
             </div>
           )}
-          {messages.length ===0 &&!isLoading &&(<Empty label="No Conversation Started"/>)}
+          {messages.length === 0 && !isLoading && (
+            <Empty label="No Code Generated" />
+          )}
           <div className="flex flex-col-reverse gap-y-4">
             {messages.map((message) => (
-              <div 
-              key={message.content} 
-              className={cn(
-                "p-8 w-full flex items-start gap-x-8 rounded-lg",
-                message.role === "user" ? "bg-white border border-black/10" : "bg-muted",
-              )}
-            >
-              {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
-              <ReactMarkdown components={{
-                  pre: ({ node, ...props }) => (
-                    <div className="overflow-auto w-full my-2 bg-black/10 p-2 rounded-lg">
-                      <pre {...props} />
-                    </div>
-                  ),
-                  code: ({ node, ...props }) => (
-                    <code className="bg-black/10 rounded-lg p-1" {...props} />
-                  )
-                }} className="text-sm overflow-hidden leading-7">
+              <div
+                key={message.content}
+                className={cn(
+                  "p-8 w-full flex items-start gap-x-8 rounded-lg",
+                  message.role === "user"
+                    ? "bg-white border border-black/10"
+                    : "bg-muted"
+                )}
+              >
+                {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
+                <ReactMarkdown
+                  components={{
+                    pre: ({ node, ...props }) => (
+                      <div className="overflow-auto w-full my-2 bg-black/10 p-2 rounded-lg">
+                        <pre {...props} />
+                      </div>
+                    ),
+                    code: ({ node, ...props }) => (
+                      <code
+                        className="bg-black/10 rounded-lg p-1"
+                        {...props}
+                      />
+                    ),
+                  }}
+                  className="text-sm overflow-hidden leading-7"
+                >
                   {message.content || ""}
                 </ReactMarkdown>
-            </div>
+              </div>
             ))}
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default Codepage;

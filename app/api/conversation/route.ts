@@ -2,31 +2,22 @@ import { checkApiLimit, incrementApiLimit } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import { Configuration, OpenAIApi } from "openai";
-// import {increaseApiLimit,checkApiLimit} from '@/lib/api-limit'
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
-const configuration = new Configuration({
-    
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const openai = new OpenAIApi(configuration);
-
-export async function POST(
-  req: Request
-) {
+export async function POST(req: Request) {
   try {
     const { userId } = auth();
     const body = await req.json();
-    const { messages  } = body;
+    const { messages } = body;
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    if (!configuration.apiKey) {
-      return new NextResponse("OpenAI API Key not configured.", { status: 500 });
+    if (!process.env.GOOGLE_API_KEY) {
+      return new NextResponse("Google API Key not configured.", { status: 500 });
     }
 
     if (!messages) {
@@ -36,23 +27,30 @@ export async function POST(
     const freeTrial = await checkApiLimit();
     const isPro = await checkSubscription();
 
-    if (!freeTrial&&!isPro) {
+    if (!freeTrial && !isPro) {
       return new NextResponse("Free trial has expired. Please upgrade to pro.", { status: 403 });
     }
-    await incrementApiLimit();
-    const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages
-    });
-    if(!isPro){
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const history = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
+
+    const lastMessage = messages[messages.length - 1];
+
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessage(lastMessage.content);
+    const responseText = result.response.text();
+
+    if (!isPro) {
       await incrementApiLimit();
     }
 
-   
-
-    return NextResponse.json(response.data.choices[0].message);
+    return NextResponse.json({ role: "assistant", content: responseText });
   } catch (error) {
-    console.log('[CONVERSATION_ERROR]', error);
+    console.log("[CONVERSATION_ERROR]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

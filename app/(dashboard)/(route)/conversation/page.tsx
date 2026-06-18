@@ -10,21 +10,24 @@ import { Form, FormField, FormControl, FormItem } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
-import { ChatCompletionRequestMessage } from "openai";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import {Empty} from "@/components/empty";
+import { Empty } from "@/components/empty";
 import { Loader } from "@/components/loader";
 import { UserAvatar } from "@/components/user-avatar";
 import { BotAvatar } from "@/components/bot-avatar";
-
-
 import { toast } from "react-hot-toast";
 import { useProModal } from "@/hooks/use-pro-modal";
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 const ConversationPage = () => {
   const router = useRouter();
   const proModal = useProModal();
-  const [messages, setMessages] = useState<ChatCompletionRequestMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,7 +38,7 @@ const ConversationPage = () => {
   const isLoading = form.formState.isSubmitting;
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const userMessage: ChatCompletionRequestMessage = {
+      const userMessage: ChatMessage = {
         role: "user",
         content: values.prompt,
       };
@@ -49,13 +52,11 @@ const ConversationPage = () => {
 
       form.reset();
     } catch (error: any) {
-
-      if(error?.response.status === 403){
+      if (error?.response?.status === 403) {
         proModal.onOpen();
-      }else{
-        toast.error("Something Wrong")
+      } else {
+        toast.error("Something went wrong.");
       }
-     
     } finally {
       router.refresh();
     }
@@ -115,32 +116,34 @@ const ConversationPage = () => {
           </Form>
         </div>
         <div className="space-y-4 mt-4">
-        {isLoading && (
+          {isLoading && (
             <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
               <Loader />
             </div>
           )}
-          {messages.length ===0 &&!isLoading &&(<Empty label="No Conversation Started"/>)}
+          {messages.length === 0 && !isLoading && (
+            <Empty label="No Conversation Started" />
+          )}
           <div className="flex flex-col-reverse gap-y-4">
             {messages.map((message) => (
-              <div 
-              key={message.content} 
-              className={cn(
-                "p-8 w-full flex items-start gap-x-8 rounded-lg",
-                message.role === "user" ? "bg-white border border-black/10" : "bg-muted",
-              )}
-            >
-              {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
-              <p className="text-sm">
-                {message.content}
-              </p>
-            </div>
+              <div
+                key={message.content}
+                className={cn(
+                  "p-8 w-full flex items-start gap-x-8 rounded-lg",
+                  message.role === "user"
+                    ? "bg-white border border-black/10"
+                    : "bg-muted"
+                )}
+              >
+                {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
+                <p className="text-sm">{message.content}</p>
+              </div>
             ))}
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default ConversationPage;

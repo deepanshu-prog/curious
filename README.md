@@ -4,9 +4,9 @@ A modern AI-powered SaaS application built with Next.js 13, offering multiple AI
 
 ## Features
 
-- **AI Conversation** - Chat with an AI assistant powered by GPT-3.5 Turbo
-- **Image Generation** - Create images from text prompts using DALL-E
-- **Code Generation** - Generate code snippets with AI-powered explanations
+- **AI Conversation** - Chat with an AI assistant powered by Google Gemini
+- **Image Generation** - Create images from text prompts using Flux Schnell
+- **Code Generation** - Generate code snippets powered by Google Gemini
 - **Music Generation** - Create music and audio from text descriptions
 - **Video Generation** - Generate videos from text prompts
 - **Free Trial** - 5 free generations before requiring a subscription
@@ -24,7 +24,7 @@ A modern AI-powered SaaS application built with Next.js 13, offering multiple AI
 | UI Components | Radix UI, Lucide Icons |
 | Authentication | Clerk |
 | Database | MySQL + Prisma ORM |
-| AI Services | OpenAI API, Replicate API |
+| AI Services | Google Gemini API, Replicate API |
 | Payments | Stripe |
 | State Management | Zustand |
 | Form Handling | React Hook Form + Zod |
@@ -33,7 +33,7 @@ A modern AI-powered SaaS application built with Next.js 13, offering multiple AI
 
 - [Node.js](https://nodejs.org/) 18+
 - [MySQL](https://www.mysql.com/) database (or use [PlanetScale](https://planetscale.com/))
-- [OpenAI API Key](https://platform.openai.com/api-keys)
+- [Google Gemini API Key](https://aistudio.google.com/apikey) (free)
 - [Replicate API Token](https://replicate.com/account/api-tokens)
 - [Clerk Account](https://clerk.com/)
 - [Stripe Account](https://stripe.com/)
